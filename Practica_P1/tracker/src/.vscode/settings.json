@@ -1,0 +1,14 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/robotica/catkin_ws/devel/lib/python2.7/dist-packages",
+        "/opt/ros/kinetic/lib/python2.7/dist-packages",
+        "/home/robotica/nao/pynaoqi-python2.7-2.5.7.1-linux64/lib/python2.7/site-packages",
+        "/home/robotica/nao/pynaoqi-python2.7-2.5.7.1-linux64/lib/python2.7/site-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/robotica/catkin_ws/devel/lib/python2.7/dist-packages",
+        "/opt/ros/kinetic/lib/python2.7/dist-packages",
+        "/home/robotica/nao/pynaoqi-python2.7-2.5.7.1-linux64/lib/python2.7/site-packages",
+        "/home/robotica/nao/pynaoqi-python2.7-2.5.7.1-linux64/lib/python2.7/site-packages"
+    ]
+}

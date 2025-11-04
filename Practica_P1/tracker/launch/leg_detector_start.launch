@@ -1,0 +1,27 @@
+<launch>
+	<arg name="scan" default="/scan"/>
+
+	<!--Nodo del leg detector -->
+	<node pkg="leg_detector" type="leg_detector" name="leg_detector" args="scan:=$(arg scan) $(find leg_detector)/config/trained_leg_detector.yaml" respawn="true" output="screen">
+		<param name="fixed_frame" type="string" value="base_link"/>
+		<param name="scan_frequency" value="15"/>
+		<param name="detection_threshold" value="0.6"/>
+		<param name="display_detected_people" value="False"/>
+	</node>
+
+	<!--Nodo del programa de lectura -->
+	<node
+	pkg="tracker"
+	type="Lectura.py"
+	name="CorrecionLecturas"
+	output="screen" 
+	/> 
+
+	<!--Nodo del programa de movimiento -->
+	<node
+	pkg="tracker"
+	type="Movimiento.py"
+	name="Movimiento"
+	output="screen"
+	/> 
+</launch>
