@@ -119,8 +119,6 @@ def PredecirEstados(PersonT,PersonTm1):
         PredPerson.pos.x = XPred
         PredPerson.pos.y = YPred
         PredictFilt[idT] = PredPerson
-        #print 'Prediccion para', idT, XPred, YPred
-        #print '^^^^^^^^^^^^^^^^^^^^^'
 
     return PredictFilt
 
