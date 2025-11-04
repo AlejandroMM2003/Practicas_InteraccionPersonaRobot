@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+'''
+Script ROS que recibe detecciones de personas, filtra sus posiciones, predice su movimiento
+y publica marcadores visuales (en RViz) y las coordenadas de la persona a seguir
+en un topic específico (/Targeted_Person).
+'''
+
 import rospy, math
 from people_msgs.msg import PositionMeasurementArray
 from visualization_msgs.msg import Marker, MarkerArray
@@ -8,22 +14,31 @@ from tf.transformations import quaternion_from_euler
 from geometry_msgs.msg import Point
 import tf, numpy as np
 
-# LANZAR PRIMERO ROSBAG (JUNTO AL ROSCORE EN OTRA TERMINAL) Y DESPUES LAUNCH
+# ============================================================
+# === CONFIGURACIÓN GLOBAL ===================================
+# ============================================================
 
-# Variables globales del programa
-PersonaSeguida = ""     
+PersonaSeguida = ""     # Persona que seguiremos
 persona_Ant = {}        # Personas en t-1
 Filtrados = {}          # Personas en t
 MaxSpeed = 5            # km/h
 MaxPersons = 5          # Maximo de personas en escena
 alfa = 0.0              # Coeficiente de ponderacion
 
-
+# Publidadores para enviar las marcas filtradas a rviz y las coordenadas al movimiento
 Send_marks = rospy.Publisher('/My_Marks', MarkerArray, queue_size=10)
 Send_Follow = rospy.Publisher('/Targeted_Person', Point, queue_size=10)
 
 
+# ============================================================
+# === FUNCIÓN: EnviarMarcas ==================================
+# ============================================================
+
 def EnviarMarcas(People_Dict,seguido):
+    """
+    Publica un MarkerArray con las posiciones y nombres de las personas detectadas.
+    Destaca en color amarillo la persona que se está siguiendo.
+    """
     global Send_marks
     ArrayMarks = MarkerArray()
 
@@ -35,10 +50,12 @@ def EnviarMarcas(People_Dict,seguido):
         mark.type = Marker.TEXT_VIEW_FACING
         mark.action = Marker.ADD
         mark.text = nome
-        dir = math.atan2(person.pos.y , person.pos.x)
 
+        # Orientación del texto hacia la persona
+        dir = math.atan2(person.pos.y , person.pos.x)
         ox,oy,oz,ow = quaternion_from_euler(0,0,dir)
 
+        # Escala y color
         mark.pose.position.x, mark.pose.position.y, mark.pose.position.z = person.pos.x , person.pos.y , 1.0
         mark.pose.orientation.x, mark.pose.orientation.y, mark.pose.orientation.z, mark.pose.orientation.w = \
             ox , oy , oz , ow
@@ -53,14 +70,22 @@ def EnviarMarcas(People_Dict,seguido):
         mark.lifetime = rospy.Duration(0.5)
         ArrayMarks.markers.append(mark)
 
-
+    # Publica el array completo
     Send_marks.publish(ArrayMarks)
 
 
 
 
+# ============================================================
+# === FUNCIÓN CALLBACK: callback_filtrado ====================
+# ============================================================
 
 def callback_filtrado(data,MaxTargets):
+    """
+    Callback ejecutado al recibir detecciones de personas.
+    Filtra las mediciones eliminando movimientos imposibles y
+    actualiza las listas de personas detectadas.
+    """
     # Variables globales
     global PersonaSeguida, persona_Ant, Filtrados, Ponderados, alfa
 
@@ -107,8 +132,16 @@ def callback_filtrado(data,MaxTargets):
     EnviarMarcas(Ponderados, PersonaSeguida)
 
 
-    
+# ============================================================
+# === FUNCIÓN: PredecirEstados ===============================
+# ============================================================
+
 def PredecirEstados(PersonT,PersonTm1):
+    """
+    Predice la próxima posición de cada persona aplicando
+    una derivada discreta (modelo de movimiento lineal).
+    """
+
     PredictFilt = {}
     # Iteramos todas con todas
     for idT in set(PersonT.keys()) & set(PersonTm1.keys()):
@@ -123,7 +156,15 @@ def PredecirEstados(PersonT,PersonTm1):
     return PredictFilt
 
 
+# ============================================================
+# === FUNCIÓN: Ponderar ======================================
+# ============================================================
+
 def Ponderar(Pred,Med,alfa):
+    """
+    Combina predicción y medida mediante ponderación lineal:
+    nueva = alfa*predicción + (1-alfa)*medición
+    """
     # Iteramos todos con todos
     Ponderados = {}
     for pred_id,pred_person in Pred.items():
@@ -139,9 +180,17 @@ def Ponderar(Pred,Med,alfa):
 
 
 
-PredAnt = {}
 
+
+# ============================================================
+# === CALLBACK TEMPORAL: timer_callback =======================
+# ============================================================
+PredAnt = {}
 def timer_callback(event):
+    """
+    Se ejecuta periódicamente para predecir posiciones y publicar
+    tanto los marcadores como el punto a seguir.
+    """
     global alfa, Ponderados, Send_Follow, PredAnt
     if Filtrados and persona_Ant and PersonaSeguida:
         # Usamos Filtrado como etapa anterior si no hay muchas iteraciones sin medidas
@@ -160,7 +209,18 @@ def timer_callback(event):
         Punto.y = yFollow
         Send_Follow.publish(Punto)
 
+
+
+# ============================================================
+# === FUNCIÓN PRINCIPAL: main ================================
+# ============================================================
+
 def main():
+    """
+    Inicializa el nodo ROS, suscribiéndose al topic del people tracker
+    y lanzando un temporizador para la predicción periódica.
+    """
+
     global Send_Follow
     rospy.init_node('PruebaDatos', anonymous=True)
     rospy.Subscriber("/people_tracker_measurements", PositionMeasurementArray,
@@ -171,13 +231,13 @@ def main():
     rospy.sleep(0.1)
     Timer.run()
 
-
-
-
-
-
     rospy.spin()
 
+
+
+# ============================================================
+# === EJECUCIÓN ==============================================
+# ============================================================
 
 if __name__ == '__main__':
     try:
