@@ -11,12 +11,12 @@ import tf, numpy as np
 # LANZAR PRIMERO ROSBAG (JUNTO AL ROSCORE EN OTRA TERMINAL) Y DESPUES LAUNCH
 
 # Variables globales del programa
-PersonaSeguida = ""
+PersonaSeguida = ""     
 persona_Ant = {}        # Personas en t-1
 Filtrados = {}          # Personas en t
-MaxSpeed = 5 # km/h
-MaxPersons = 5 # Maximo de personas en escena
-alfa = 0.0      # Coeficiente de ponderacion
+MaxSpeed = 5            # km/h
+MaxPersons = 5          # Maximo de personas en escena
+alfa = 0.0              # Coeficiente de ponderacion
 
 
 Send_marks = rospy.Publisher('/My_Marks', MarkerArray, queue_size=10)
